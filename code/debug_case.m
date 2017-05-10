@@ -1,23 +1,34 @@
 %%area_2 case
 % a debug case with
-% area # = 2  time period # = 2
+% area # = 2  time period # = 5
 % one unit in each area
 % Constraints: 1) unit output limit (no binary variables)
-%              2) tie line transmission limit
-%              3) power balance in each area
+%              2) unit binary variable logic
+%              3) minimum up/down time
+%              4) ramping up/down limit
+%              5) tie line transmission limit
+%              6) power balance in each area
 %% input data
 A=2;               %% number of areas
-T=1;               %% time horizons
+T=5;               %% time horizons
 TD=0;              %% number of days
 Nunit=[1,1];       %%number of units
 Demand=[
-    90,100];     %% demand of each area
+    90,100
+    110,120
+    130,90
+    100,110
+    120,80];     %% demand of each area
 %ReserveUp=ones(T,A);  %% up reserve
 %ReserveDn=ones(T,A);  %% down reserve
 
 %%------------------------- unit data -------------------------------------
-%Minup=cell(1,A);      %% unit minimun up time
-%Mindown=cell(1,A);    %% unit minimum dowm time
+Minup=cell(1,A);      %% unit minimun up time
+Minup{1}=[1];
+Minup{2}=[1];
+Mindown=cell(1,A);    %% unit minimum dowm time
+Mindown{1}=[1];
+Mindown{2}=[1];
 Pmax=cell(1,A);        %% unit maximum output
 Pmax{1}=[100];
 Pmax{2}=[100];
@@ -32,10 +43,10 @@ Rampdown{1}=[30];
 Rampdown{2}=[30];
 Onoff_t0=cell(1,A);     %% initial status at t=0
 Onoff_t0{1}=[0];
-Onoff_t0{2}=[0];
+Onoff_t0{2}=[1];
 Pthermal_t0=cell(1,A);         %% initial output at t=0
 Pthermal_t0{1}=[0];
-Pthermal_t0{2}=[0];
+Pthermal_t0{2}=[80];
 On_t0=cell(1,A);        %% length of time unit g has to be on at the beginning
 On_t0{1}=[0];
 On_t0{2}=[0];
@@ -46,6 +57,10 @@ Off_t0{2}=[0];
 
 %%------------------------- wind power and PV data ------------------------
 Windmax=[
+    100,0
+    90,0
+    80,0
+    90,0
     100,0];  %% theory output of wind power
 
 PVmax  =zeros(T,A);  %% theory output of PV
@@ -94,40 +109,40 @@ end
 Constraints=cell(1,A);
 for a=1:A
     %--------------------- thermal unit constraints ------------------------
-%     % binary variable logic
-%     Constraints{a}=[Constraints{a},(startup{a}-shutdown{a}==onoff{a}-[Onoff_t0{a};onoff{a}(1:T-1,:)]):'logical_1'];
-%     Constraints{a}=[Constraints{a},(startup{a}+shutdown{a}<=ones(T,Nunit(a))):'logical_2'];
-%     % output limit
-%     for t = 1:T
-%        Constraints{a} = [Constraints{a}, (onoff{a}(t,:).*Pmin{a} <=...
-%            Pthermal{a}(t,:) <= onoff{a}(t,:).*Pmax{a}):'output limit'];
-%     end
+    % binary variable logic
+    Constraints{a}=[Constraints{a},(startup{a}-shutdown{a}==onoff{a}-[Onoff_t0{a};onoff{a}(1:T-1,:)]):'logical_1'];
+    Constraints{a}=[Constraints{a},(startup{a}+shutdown{a}<=ones(T,Nunit(a))):'logical_2'];
+    % output limit
     for t = 1:T
-       Constraints{a} = [Constraints{a}, (Pmin{a} <=...
-           Pthermal{a}(t,:) <= Pmax{a}):'output limit'];
+       Constraints{a} = [Constraints{a}, (onoff{a}(t,:).*Pmin{a} <=...
+           Pthermal{a}(t,:) <= onoff{a}(t,:).*Pmax{a}):'output limit'];
     end
+%     for t = 1:T
+%        Constraints{a} = [Constraints{a}, (Pmin{a} <=...
+%            Pthermal{a}(t,:) <= Pmax{a}):'output limit'];
+%     end
     % minimum up/down time
-%     Lini=On_t0{a}+Off_t0{a};
-%     for t=1:Lini
-%         onoff{a}(t,:)=Onoff_t0{a};
-%     end
-%     for t = Lini+1:T
-%         for unit = 1:Nunit(a)
-%             tt=max(1,t-Minup{a}(unit)+1);
-%             Constraints{a} = [Constraints{a}, (sum(startup{a}(tt:t,unit))...
-%                 <= onoff{a}(t,unit)):'min_up'];
-%             tt=max(1,t-Mindown{a}(unit)+1);
-%             Constraints{a} = [Constraints{a}, (sum(shutdown(tt:t,unit))...
-%                 <= 1-onoff{a}(t,unit)):'min_down'];
-%         end
-%     end
+    Lini=On_t0{a}+Off_t0{a};
+    for t=1:Lini
+        onoff{a}(t,:)=Onoff_t0{a};
+    end
+    for t = Lini+1:T
+        for unit = 1:Nunit(a)
+            tt=max(1,t-Minup{a}(unit)+1);
+            Constraints{a} = [Constraints{a}, (sum(startup{a}(tt:t,unit))...
+                <= onoff{a}(t,unit)):'min_up'];
+            tt=max(1,t-Mindown{a}(unit)+1);
+            Constraints{a} = [Constraints{a}, (sum(shutdown{a}(tt:t,unit))...
+                <= 1-onoff{a}(t,unit)):'min_down'];
+        end
+    end
     % ramping up/down limit
-%     Constraints{a}=[Constraints{a},(-Rampdown{a} <= Pthermal{a}(1,:)-Pthermal_t0{a}...
-%             <= Rampup{a}):'ramp0'];
-%     for t=2:T
-%         Constraints{a}=[Constraints{a},(-Rampdown{a} <= Pthermal{a}(t,:)-Pthermal{a}(t-1,:)...
-%             <= Rampup{a}):'ramp'];
-%     end
+    Constraints{a}=[Constraints{a},(-Rampdown{a} <= Pthermal{a}(1,:)-Pthermal_t0{a}...
+            <= Rampup{a}):'ramp0'];
+    for t=2:T
+        Constraints{a}=[Constraints{a},(-Rampdown{a} <= Pthermal{a}(t,:)-Pthermal{a}(t-1,:)...
+            <= Rampup{a}):'ramp'];
+    end
     
     %------------------------------- wind power & PV ----------------------
     Constraints{a}=[Constraints{a},(zeros(T,1) <= Pwind(:,a) <= Windmax(:,a)):'wind power output limit'];
@@ -286,7 +301,8 @@ for a=1:A
     legend('Tie 1');
     title(['tie line --area ' num2str(a)]);
 end
-
+stairs([value(Ftie{1}),value(Ftie{2})]);
+legend('Tie 1','Tin 2');
 
 
 
