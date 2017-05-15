@@ -100,12 +100,12 @@ for a=1:A
             ==Demand(t,a)+sum(Ftie{a}(t,:))):'power balance'];
     end
     %------------------------------- spinning reserve ---------------------
-%     for t=1:T
-%         Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmax{a})+Windmax(t,a)+PVmax(t,a)...
-%             +sum(Tieline{a}(:,3))>=Demand(t,a)+ReserveUp(t,a)):'up reserve'];
-%         Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmin{a})-sum(Tieline{a}(:,3))...
-%             <=Demand(t,a)-ReserveDn(t,a)):'down reserve'];
-%     end
+    for t=1:T
+        Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmax{a})+Windmax(t,a)+PVmax(t,a)...
+            +sum(Tieline{a}(:,3))>=Demand(t,a)+ReserveUp(t,a)):'up reserve'];
+        Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmin{a})-sum(Tieline{a}(:,3))...
+            <=Demand(t,a)-ReserveDn(t,a)):'down reserve'];
+    end
 end
 %%--------------------------- consensus -----------------------------------
 % Con_global=[];

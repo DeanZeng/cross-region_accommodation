@@ -25,6 +25,8 @@ Demand=zeros(T,A);        %% demand
 Windmax= zeros(T,A);      %% theory output of wind power
 PVmax  = zeros(T,A);      %% theory output of PV
 Tieline=cell(1,A);        %% tie lines
+ReserveUp=ones(T,A);      %% up reserve
+ReserveDn=ones(T,A);      %% down reserve
 %%------------------------------ read data---------------------------------
 for a=1:A
     %%------------------------- unit data ---------------------------------
@@ -57,5 +59,8 @@ for a=1:A
     %     Ftie0{a}  =ones(T,Ntie(a));    
     %     Etie{a}   =ones(TD,Ntie(a));       
     % end
+    ReserveUp(:,a)  = xlsread(areaFile{1},2,['B2:B' num2str(T+1)]);  %% up reserve
+    ReserveDn(:,a)  = xlsread(areaFile{1},2,['B2:B' num2str(T+1)]);  %% down reserve
 end
+%% save data
 save input_data;
