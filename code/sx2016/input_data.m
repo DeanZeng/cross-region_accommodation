@@ -25,6 +25,9 @@ Demand=zeros(T,A);        %% demand
 Windmax= zeros(T,A);      %% theory output of wind power
 PVmax  = zeros(T,A);      %% theory output of PV
 Tieline=cell(1,A);        %% tie lines
+Ftie0=cell(1,A);          %% fixed power flow
+Etie =cell(1,A);          %% exchage energy each day
+TDstart=ones(1,TD+1);
 %%------------------------------ read data---------------------------------
 for a=1:A
     %%------------------------- unit data ---------------------------------
@@ -48,14 +51,11 @@ for a=1:A
     PVmax(:,a)     = xlsread(areaFile{a},4,['B2:B' num2str(T+1)]);     %% theory output of PV
     %%----------------------------- tie-line data -----------------------------
     Tieline{a}     = xlsread(areaFile{a},5,['B2:D' num2str(Ntie(a)+1)]);
-
-    Ftie0=cell(1,A);     %% fixed power flow
-    Etie =cell(1,A);     %% exchage energy each day
-    TDstart=ones(1,TD+1);
     % for a=1:A
     %     Tieline{a}=ones(Ntie(a),3);    %% [connected_area, type, flow_max]
     %     Ftie0{a}  =ones(T,Ntie(a));    
     %     Etie{a}   =ones(TD,Ntie(a));       
     % end
 end
+%% save data
 save input_data;
