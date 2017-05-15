@@ -59,8 +59,8 @@ for a=1:A
     %     Ftie0{a}  =ones(T,Ntie(a));    
     %     Etie{a}   =ones(TD,Ntie(a));       
     % end
-    ReserveUp(:,a)  = xlsread(areaFile{1},2,['B2:B' num2str(T+1)]);  %% up reserve
-    ReserveDn(:,a)  = xlsread(areaFile{1},2,['B2:B' num2str(T+1)]);  %% down reserve
+    ReserveUp(:,a)  = xlsread(areaFile{a},8,['B2:B' num2str(T+1)]);  %% up reserve
+    ReserveDn(:,a)  = xlsread(areaFile{a},8,['C2:C' num2str(T+1)]);  %% down reserve
 end
 %% save data
 save input_data;
