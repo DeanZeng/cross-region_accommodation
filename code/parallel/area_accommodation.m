@@ -59,7 +59,7 @@ end
 % minimum up/down time
 Lini=On_t0+Off_t0;
 for t=1:Lini
-    onoff(t,:)=Onoff_t0;
+    Constraints = [Constraints,(onoff(t,:) == Onoff_t0 ):'initial status'];
 end
 for t = Lini+1:T
     for unit = 1:Nunit
@@ -111,9 +111,9 @@ end
 %------------------------------- spinning reserve ---------------------
 for t=1:T
     Constraints=[Constraints,(sum(onoff(t,:).*Pmax)+Windmax(t)+PVmax(t)...
-        +sum(Tieline(:,3))>=Demand(t)+ReserveUp(t))];
+        +sum(Tieline(:,3))>=Demand(t)+ReserveUp(t)):'up reserve'];
     Constraints=[Constraints,(sum(onoff(t,:).*Pmin)-sum(Tieline(:,3))...
-        <=Demand(t)-ReserveDn(t))];
+        <=Demand(t)-ReserveDn(t)):'down reserve'];
 end
 %%Objective
 minLang=[];
@@ -125,8 +125,8 @@ minLang= -sum(Pwind)-sum(Ppv);
             Rho/2*(Ftie(:,la)-Ftie_val(:,la))'*(Ftie(:,la)-Ftie_val(:,la));                
     end
 %%solver
-Ops = sdpsettings('solver','gurobi','usex0',1,'showprogress',0);
-Ops.gurobi.MIPGap=0.01;
+Ops = sdpsettings('solver','gurobi','usex0',1,'verbose',0,'showprogress',0);
+Ops.gurobi.MIPGap=0.0001;
 %         Ops.gurobi.MIPGapAbs=1.0;
 Ops.gurobi.OptimalityTol = 0.01;
 %         Ops.gurobi.FeasRelaxBigM   = 1.0e10;
@@ -153,4 +153,4 @@ out.onoff    = onoff_V;
 out.startup  = startup_V;             
 out.shutdown = shutdown_V;            
 out.Ftie     = Ftie_V;
-out.mingLang = minLang_V;
+out.minLang = minLang_V;
