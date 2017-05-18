@@ -67,7 +67,8 @@ for a=1:A
     % minimum up/down time
     Lini=On_t0{a}+Off_t0{a};
     for t=1:Lini
-        onoff{a}(t,:)=Onoff_t0{a};
+%         onoff{a}(t,:)=Onoff_t0{a};
+        Constraints{a} = [Constraints{a},(onoff{a}(t,:) == Onoff_t0{a}):'initial status'];
     end
     for t = Lini+1:T
         for unit = 1:Nunit(a)
@@ -119,9 +120,9 @@ for a=1:A
     %------------------------------- spinning reserve ---------------------
     for t=1:T
         Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmax{a})+Windmax(t,a)+PVmax(t,a)...
-            +sum(Tieline{a}(:,3))>=Demand(t,a)+ReserveUp(t,a))];
+            +sum(Tieline{a}(:,3))>=Demand(t,a)+ReserveUp(t,a)):'up reserve'];
         Constraints{a}=[Constraints{a},(sum(onoff{a}(t,:).*Pmin{a})-sum(Tieline{a}(:,3))...
-            <=Demand(t,a)-ReserveDn(t,a))];
+            <=Demand(t,a)-ReserveDn(t,a)):'down reserve'];
     end
 end
 %%--------------------------- consensus -----------------------------------
@@ -155,7 +156,7 @@ QUIET    = 0;
 MAX_ITER = 20;
 ABSTOL   = 1e-2;
 RELTOL   = 1e-2;
-Rho      = 0.1;
+Rho      = 0.001;
 alpha    = 1;
 %%global variable (exchange infromation)
 lamda=cell(1,A);
@@ -190,9 +191,9 @@ for k =1:MAX_ITER
         end
         %%solver
         Ops = sdpsettings('solver','gurobi','usex0',1,'showprogress',0);
-        Ops.gurobi.MIPGap=0.01;
+        Ops.gurobi.MIPGap=0.001;
 %         Ops.gurobi.MIPGapAbs=1.0;
-        Ops.gurobi.OptimalityTol = 0.01;
+        Ops.gurobi.OptimalityTol = 0.001;
 %         Ops.gurobi.FeasRelaxBigM   = 1.0e10;
         Ops.gurobi.DisplayInterval = 20;
         optimize(Constraints{a},minLang{a},Ops);  

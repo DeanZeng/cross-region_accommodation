@@ -1,6 +1,6 @@
 %% rolling calculation per week
 RollNum=7;         %%滚动次数
-RollStart=(1:24:8737)';       %%滚动周期起始时间
+RollStart=(1:5:8737)';       %%滚动周期起始时间
 %% full period input data
 load input_data.mat
 %%------------------------ initialization ---------------------------------
@@ -81,24 +81,25 @@ end
 %% save resluts
 save results.mat Pwind_F Ppv_F Pthermal_F onoff_F startup_F shutdown_F Ftie_F;
 %% display results
+Endh=35;
 for a=1:A
     %%------------------------ thermal unit -------------------------------
     figure;
-    stairs(Pthermal_F{a}(1:168,:));
+    stairs(Pthermal_F{a}(1:Endh,:));
     title(['thermal unit output in area' num2str(a)]);
     %%------------------------------- wind ------------------------------------
     figure;
     hold on;
-    stairs(Windmax(1:168,a));
-    stairs(Pwind_F(1:168,a));
+    stairs(Windmax(1:Endh,a));
+    stairs(Pwind_F(1:Endh,a));
     title(['wind power in area' num2str(a)]);
     legend('maximum','actual');
     hold off;
     %%-------------------------------- PV -------------------------------------
     figure;
     hold on;
-    stairs(PVmax(1:168,a));
-    stairs(Ppv_F(1:168,a));
+    stairs(PVmax(1:Endh,a));
+    stairs(Ppv_F(1:Endh,a));
     title(['PV generation in area' num2str(a)]);
     legend('maximum','actual');
     hold off;  
@@ -111,8 +112,8 @@ for a=1:A
                 if (Tieline{a}(la,1)==b)&&(Tieline{b}(lb,1)==a)
                     figure;
                     hold on;
-                    stairs(Ftie_F{a}(1:168,la));
-                    stairs(Ftie_F{b}(1:168,lb));
+                    stairs(Ftie_F{a}(1:Endh,la));
+                    stairs(Ftie_F{b}(1:Endh,lb));
                     legend(['Tie ' num2str(a) '-' num2str(b)],['Tie ' num2str(b) '-' num2str(a)]); 
                     title('tie line power flow');
                     hold off;
