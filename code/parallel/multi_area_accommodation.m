@@ -1,4 +1,4 @@
-function out=multi_area_accommodation(in)
+function [out,hist]=multi_area_accommodation(in)
 %% input data
 area_in=in.area;
 T=in.T;
@@ -7,10 +7,10 @@ TD=in.TD;
 %% decentralized mode
 %Global constants and defaults
 QUIET    = 0;
-MAX_ITER = 20;
+MAX_ITER = 100;
 ABSTOL   = 1e-2;
 RELTOL   = 1e-2;
-Rho      = 0.1;
+Rho      = 0.001;
 alpha    = 1;
 %%global variable (exchange infromation)
 for a=1:A
@@ -25,7 +25,7 @@ end
 for k =1:MAX_ITER
     %%--------------------------- x-update --------------------------------
 %     pool=parpool;
-    for a=1:A
+    parfor a=1:A
         area_out(a)=area_accommodation(area_in(a),T);
     end
 %     delete(pool);   
@@ -38,8 +38,8 @@ for k =1:MAX_ITER
                         resDual{a}(:,la)=-Rho*((area_out(a).Ftie(:,la)-area_out(b).Ftie(:,lb))/2-area_in(a).Ftie_val(:,la));
                         resDual{b}(:,lb)=-Rho*((area_out(b).Ftie(:,lb)-area_out(a).Ftie(:,la))/2-area_in(b).Ftie_val(:,lb));
                         
-                        in(a).Ftie_val(:,la)=(area_out(a).Ftie(:,la)-area_out(b).Ftie(:,lb))/2;
-                        in(b).Ftie_val(:,lb)=(area_out(a).Ftie(:,lb)-area_out(a).Ftie(:,la))/2;                      
+                        area_in(a).Ftie_val(:,la)=(area_out(a).Ftie(:,la)-area_out(b).Ftie(:,lb))/2;
+                        area_in(b).Ftie_val(:,lb)=(area_out(b).Ftie(:,lb)-area_out(a).Ftie(:,la))/2;                      
                         
                         deltLam{a}(:,la)=Rho*(area_out(a).Ftie(:,la)+area_out(b).Ftie(:,lb))/2;
                         deltLam{b}(:,lb)=Rho*(area_out(b).Ftie(:,lb)+area_out(a).Ftie(:,la))/2;
@@ -50,54 +50,28 @@ for k =1:MAX_ITER
             end
         end
     end
-    resPnorm(k)=0;
-    resDnorm(k)=0;
+    Xnorm(k)=0;
+    Znorm(k)=0;
+    LamdaNorm(k)=0;
+    hist.resPnorm(k)=0;
+    hist.resDnorm(k)=0;
     for a=1:A
-       resPnorm(k)= resPnorm(k)*resPnorm(k)+ sum(sum(deltLam{a}.*deltLam{a}));
-       resDnorm(k)= resDnorm(k)*resDnorm(k)+ sum(sum(resDual{a}.*resDual{a}));
+       hist.resPnorm(k) = hist.resPnorm(k)*hist.resPnorm(k)+ sum(sum(deltLam{a}.*deltLam{a}));
+       hist.resDnorm(k) = hist.resDnorm(k)*hist.resDnorm(k)+ sum(sum(resDual{a}.*resDual{a}));
+       Xnorm(k)         = Xnorm(k)*Xnorm(k)+sum(sum(area_out(a).Ftie.*area_out(a).Ftie));
+       Znorm(k)         = Znorm(k)*Znorm(k)+sum(sum(area_in(a).Ftie_val.*area_in(a).Ftie_val));
+       LamdaNorm(k)     = LamdaNorm(k)*LamdaNorm(k)+sum(sum(area_in(a).lamda.*area_in(a).lamda));
     end
-    resPnorm(k)=sqrt(resPnorm(k));
-    resDnorm(k)=sqrt(resDnorm(k));
-    if (resPnorm(k)<ABSTOL)&&(resDnorm(k)<ABSTOL)
+    hist.resPnorm(k)=sqrt(hist.resPnorm(k));
+    hist.resDnorm(k)=sqrt(hist.resDnorm(k));
+    hist.eps_pri(k) = sqrt(T)*ABSTOL + RELTOL*max(Xnorm(k), Znorm(k));
+    hist.eps_dual(k)= sqrt(T)*ABSTOL + RELTOL*norm(LamdaNorm(k));
+    hist.iter=k;
+    if (hist.resPnorm(k)<hist.eps_pri(k))&&(hist.resDnorm(k)<hist.eps_dual(k))
         break;
     end
 %     k
 %     toc;
 end
 %% read values of variables
-%%--------------------------- wind power & PV -----------------------------
-Pwind_V = zeors(T,A);
-Ppv     = zeros(T,A);
-for a=1:A
-    Pwind_V(:,a)= area_out(a).Pwind;    %% output of wind power 
-    Ppv_V(:,a)  = area_out(a).Ppv;      %% output of PV 
-end
-%%--------------------------- thermal unit --------------------------------
-Pthermal_V=cell(1,A);          %% output of thermal unit
-onoff_V=cell(1,A);           %% on_off status;
-startup_V=cell(1,A);              %% start up indicator
-shutdown_V=cell(1,A);            %% shut down indicator
-for a=1:A
-    Pthermal_V{a} = area_out(a).Pthermal;
-    onoff_V{a}    = area_out(a).onoff;
-    startup_V{a}  = area_out(a).startup;
-    shutdown_V{a} = area_out(a).shutdown;
-end
-
-%%---------------------------- tie lines ----------------------------------
-Ftie_V=cell(1,A);
-for a=1:A
-    Ftie_V{a} = area_out(a).Ftie;
-end
-
-minLang_V=cell(1,A);
-for a=1:A
-    minLang_V{a}=area_out(a).minLang;
-end
-out.Pwind    = Pwind_V;
-out.Ppv      = Ppv_V;
-out.Pthermal = Pthermal_V;
-out.onoff    = onoff_V;
-out.startup  = startup_V;             
-out.shutdown = shutdown_V;            
-out.Ftie     = Ftie_V;
+out.area=area_out;
