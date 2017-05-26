@@ -4,27 +4,27 @@
 % in_full = in_full.in;
 % load results_24X364.mat;
 A=2;
-Starth=1;
-Endh=24*30;
+Starth=24*55;
+Endh=24*57;
 %% display results
 for a=1:A
     %%------------------------ thermal unit -------------------------------
     figure;
-    stairs(Pthermal_F{a}(Starth:Endh,:));
+    stairs(out_full(a).Pthermal(Starth:Endh,:));
     title(['thermal unit output in area' num2str(a)]);
     %%------------------------------- wind ------------------------------------
     figure;
     hold on;
-    stairs(in_full.area(a).Windmax(Starth:Endh));
-    stairs(Pwind_F(Starth:Endh,a));
+    stairs(in_full(a).Windmax(Starth:Endh));
+    stairs(out_full(a).Pwind(Starth:Endh));
     title(['wind power in area' num2str(a)]);
     legend('maximum','actual');
     hold off;
     %%-------------------------------- PV -------------------------------------
     figure;
     hold on;
-    stairs(in_full.area(a).PVmax(Starth:Endh));
-    stairs(Ppv_F(Starth:Endh,a));
+    stairs(in_full(a).PVmax(Starth:Endh));
+    stairs(out_full(a).Ppv(Starth:Endh));
     title(['PV generation in area' num2str(a)]);
     legend('maximum','actual');
     hold off;  
@@ -32,13 +32,13 @@ end
 %%------------------------------- tie lines -------------------------------
 for a=1:A
     for b=a+1:A
-        for la=1:in_full.area(a).Ntie
-            for lb=1:in_full.area(b).Ntie
-                if (in_full.area(a).Tieline(la,1)==b)&&(in_full.area(b).Tieline(lb,1)==a)
+        for la=1:in_full(a).Ntie
+            for lb=1:in_full(b).Ntie
+                if (in_full(a).Tieline(la,1)==b)&&(in_full(b).Tieline(lb,1)==a)
                     figure;
                     hold on;
-                    stairs(Ftie_F{a}(Starth:Endh,la));
-                    stairs(Ftie_F{b}(Starth:Endh,lb));
+                    stairs(out_full(a).Ftie(Starth:Endh,la));
+                    stairs(out_full(a).Ftie(Starth:Endh,lb));
                     legend(['Tie ' num2str(a) '-' num2str(b)],['Tie ' num2str(b) '-' num2str(a)]); 
                     title('tie line power flow');
                     hold off;
@@ -52,15 +52,15 @@ for a=1:A
     figure;
     hold on;
 %     area(Demand(1:Endh,a),'FaceColor','g','EdgeColor','g');
-    area(sum(Pthermal_F{a}(Starth:Endh,:),2)+Pwind_F(Starth:Endh,a)+Ppv_F(Starth:Endh,a)-sum(Ftie_F{a}(Starth:Endh,:),2),'FaceColor','k','EdgeColor','k');
-    area(sum(Pthermal_F{a}(Starth:Endh,:),2)+Pwind_F(Starth:Endh,a)+Ppv_F(Starth:Endh,a),'FaceColor','r','EdgeColor','r');
-    area(sum(Pthermal_F{a}(Starth:Endh,:),2)+Pwind_F(Starth:Endh,a),'FaceColor','y','EdgeColor','y');
-    area(sum(Pthermal_F{a}(Starth:Endh,:),2),'FaceColor','b','EdgeColor','b');
-    plot(Ppv_F(Starth:Endh,a));
-    plot(Pwind_F(Starth:Endh,a));
-    plot(in_full.area(a).Demand(Starth:Endh));
-    plot(Ftie_F{a}(Starth:Endh,:));
-    plot(in_full.area(a).Demand(Starth:Endh)+sum(Ftie_F{a}(Starth:Endh,:),2));
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv_F(Starth:Endh)-sum(out_full(a).Ftie(Starth:Endh,:),2),'FaceColor','k','EdgeColor','k');
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv_F(Starth:Endh),'FaceColor','r','EdgeColor','r');
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh),'FaceColor','y','EdgeColor','y');
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2),'FaceColor','b','EdgeColor','b');
+    plot(out_full(a).Ppv(Starth:Endh));
+    plot(out_full(a).Pwind_F(Starth:Endh));
+    plot(in_full(a).Demand(Starth:Endh),'-*');
+    plot(out_full(a).Ftie(Starth:Endh,:));
+    plot(in_full(a).Demand(Starth:Endh)+sum(out_full(a).Ftie(Starth:Endh,:),2));
     legend('Tieline','PV','Wind','Thermal','PV','Wind','Demand','Tieline');
     title(['energy distribution in area ' num2str(a)]);
     hold off;
@@ -71,13 +71,13 @@ end
 Egy_str={'demand';'tieline';'thermal';'wind';'PV';'new';'windmax';'PVmax';'newmax';'windspill';'PVspill';'newspill';'generation'};
 Egy_tbl=zeros(13,A+1);
 for a=1:A
-    Egy_tbl(1,a) = sum(in_full.area(a).Demand(Starth:Endh));    %% demand
-    Egy_tbl(2,a) = sum(sum(Ftie_F{a}(Starth:Endh,:)));          %% tieline
-    Egy_tbl(3,a) = sum(sum(Pthermal_F{a}(Starth:Endh,:)));      %% thermal
-    Egy_tbl(4,a) = sum(Pwind_F(Starth:Endh,a));                 %% wind
-    Egy_tbl(5,a) = sum(Ppv_F(Starth:Endh,a));                   %% PV
-    Egy_tbl(7,a) = sum(in_full.area(a).Windmax(Starth:Endh));   %% windmax
-    Egy_tbl(8,a) = sum(in_full.area(a).PVmax(Starth:Endh));     %% PVmax
+    Egy_tbl(1,a) = sum(in_full(a).Demand(Starth:Endh));    %% demand
+    Egy_tbl(2,a) = sum(sum(out_full(a).Ftie(Starth:Endh,:)));          %% tieline
+    Egy_tbl(3,a) = sum(sum(out_full(a).Pthermal(Starth:Endh,:)));      %% thermal
+    Egy_tbl(4,a) = sum(out_full(a).Pwind(Starth:Endh));                 %% wind
+    Egy_tbl(5,a) = sum(out_full(a).Ppv_F(Starth:Endh));                   %% PV
+    Egy_tbl(7,a) = sum(in_full(a).Windmax(Starth:Endh));   %% windmax
+    Egy_tbl(8,a) = sum(in_full(a).PVmax(Starth:Endh));     %% PVmax
 end
 Egy_tbl(6,:)  = Egy_tbl(4,:) + Egy_tbl(5,:);                    %% RG
 Egy_tbl(9,:)  = Egy_tbl(7,:) + Egy_tbl(8,:);                    %% RGmax
