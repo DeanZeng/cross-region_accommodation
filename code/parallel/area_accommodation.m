@@ -1,8 +1,7 @@
-function out=area_accommodation(in,T,TD)
-if nargin < 3
-    TD=0;
-end
+function out=area_accommodation(in,x0)
 %% input data
+T           = in.T;                 %% time horizons
+TD          = in.TD;
 Nunit       = in.Nunit;             %% number of units
 Ntie        = in.Ntie;              %% number of tie lines
 %%------------------------ initialization ---------------------------------
@@ -40,6 +39,14 @@ startup  = binvar(T,Nunit,'full');   %% start up indicator
 shutdown = binvar(T,Nunit,'full');   %% shut down indicator
 %%---------------------------- tie lines ----------------------------------
 Ftie = sdpvar(T,Ntie,'full');        %% tie-line power flow
+%% initial assign
+assign(Pwind,x0.Pwind);
+assign(Ppv,x0.Ppv);
+assign(Pthermal, x0.Pthermal);
+assign(onoff, x0.onoff);
+assign(startup, x0.startup);
+assign(shutdown, x0.shutdown);
+assign(Ftie, x0.Ftie);
 %% constraints
 Constraints=[];
 
@@ -109,12 +116,16 @@ for t=1:T
         ==Demand(t)+sum(Ftie(t,:))):'power balance'];
 end
 %------------------------------- spinning reserve ---------------------
-for t=1:T
-    Constraints=[Constraints,(sum(onoff(t,:).*Pmax)+Windmax(t)+PVmax(t)...
-        +sum(Tieline(:,3))>=Demand(t)+ReserveUp(t)):'up reserve'];
-    Constraints=[Constraints,(sum(onoff(t,:).*Pmin)-sum(Tieline(:,3))...
-        <=Demand(t)-ReserveDn(t)):'down reserve'];
-end
+% for t=1:T
+%     Constraints=[Constraints,(sum(onoff(t,:).*Pmax)+Windmax(t)+PVmax(t)...
+%         +sum(Tieline(:,3))>=Demand(t)+ReserveUp(t)):'up reserve'];
+%     Constraints=[Constraints,(sum(onoff(t,:).*Pmin)-sum(Tieline(:,3))...
+%         <=Demand(t)-ReserveDn(t)):'down reserve'];
+% end
+% for t=1:T
+%     Constraints=[Constraints,(sum(onoff(t,:).*Pmax - Pthermal(t,:)) >= ReserveUp(t)):'up reserve'];
+%     Constraints=[Constraints,(sum(onoff(t,:).*Pmin - Pthermal(t,:)) <= -ReserveDn(t)):'down reserve'];
+% end
 %%Objective
 minLang=[];
 %%Objective
@@ -126,13 +137,16 @@ minLang= -sum(Pwind)-sum(Ppv);
     end
 %%solver
 Ops = sdpsettings('solver','gurobi','usex0',1,'verbose',0,'showprogress',0);
-Ops.gurobi.MIPGap=0.0001;
+Ops.gurobi.MIPGap=0.0002;
 %         Ops.gurobi.MIPGapAbs=1.0;
-Ops.gurobi.OptimalityTol = 0.01;
+Ops.gurobi.OptimalityTol = 0.0002;
 %         Ops.gurobi.FeasRelaxBigM   = 1.0e10;
 Ops.gurobi.DisplayInterval = 20;
-optimize(Constraints,minLang,Ops); 
-        
+diag = optimize(Constraints,minLang,Ops); 
+% check(Constraints);
+if diag.problem ~= 0
+    error(yalmiperror(diag.problem));
+end
 %% read values of variables
 %%--------------------------- wind power & PV -----------------------------
 Pwind_V=value(Pwind);    %% output of wind power 
