@@ -4,8 +4,8 @@
 % in_full = in_full.in;
 % load results_24X364.mat;
 A=2;
-Starth=24*55;
-Endh=24*57;
+Starth=1;
+Endh=24*3;
 %% display results
 for a=1:A
     %%------------------------ thermal unit -------------------------------
@@ -38,7 +38,7 @@ for a=1:A
                     figure;
                     hold on;
                     stairs(out_full(a).Ftie(Starth:Endh,la));
-                    stairs(out_full(a).Ftie(Starth:Endh,lb));
+                    stairs(out_full(b).Ftie(Starth:Endh,lb));
                     legend(['Tie ' num2str(a) '-' num2str(b)],['Tie ' num2str(b) '-' num2str(a)]); 
                     title('tie line power flow');
                     hold off;
@@ -52,12 +52,12 @@ for a=1:A
     figure;
     hold on;
 %     area(Demand(1:Endh,a),'FaceColor','g','EdgeColor','g');
-    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv_F(Starth:Endh)-sum(out_full(a).Ftie(Starth:Endh,:),2),'FaceColor','k','EdgeColor','k');
-    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv_F(Starth:Endh),'FaceColor','r','EdgeColor','r');
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv(Starth:Endh)-sum(out_full(a).Ftie(Starth:Endh,:),2),'FaceColor','k','EdgeColor','k');
+    area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh)+out_full(a).Ppv(Starth:Endh),'FaceColor','r','EdgeColor','r');
     area(sum(out_full(a).Pthermal(Starth:Endh,:),2)+out_full(a).Pwind(Starth:Endh),'FaceColor','y','EdgeColor','y');
     area(sum(out_full(a).Pthermal(Starth:Endh,:),2),'FaceColor','b','EdgeColor','b');
     plot(out_full(a).Ppv(Starth:Endh));
-    plot(out_full(a).Pwind_F(Starth:Endh));
+    plot(out_full(a).Pwind(Starth:Endh));
     plot(in_full(a).Demand(Starth:Endh),'-*');
     plot(out_full(a).Ftie(Starth:Endh,:));
     plot(in_full(a).Demand(Starth:Endh)+sum(out_full(a).Ftie(Starth:Endh,:),2));
@@ -75,7 +75,7 @@ for a=1:A
     Egy_tbl(2,a) = sum(sum(out_full(a).Ftie(Starth:Endh,:)));          %% tieline
     Egy_tbl(3,a) = sum(sum(out_full(a).Pthermal(Starth:Endh,:)));      %% thermal
     Egy_tbl(4,a) = sum(out_full(a).Pwind(Starth:Endh));                 %% wind
-    Egy_tbl(5,a) = sum(out_full(a).Ppv_F(Starth:Endh));                   %% PV
+    Egy_tbl(5,a) = sum(out_full(a).Ppv(Starth:Endh));                   %% PV
     Egy_tbl(7,a) = sum(in_full(a).Windmax(Starth:Endh));   %% windmax
     Egy_tbl(8,a) = sum(in_full(a).PVmax(Starth:Endh));     %% PVmax
 end
